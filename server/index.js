@@ -14,11 +14,11 @@ connectDB();
 
 // CORS setup
 const allowedOrigins = [
-  // "https://thread-1yni.onrender.com",
-  VITE_BACKEND_URL,
+  process.env.BACKEND_URL,
   "http://localhost:5173",
   "http://localhost:3000",
 ];
+
 
 app.use(
   cors({
