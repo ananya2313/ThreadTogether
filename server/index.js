@@ -14,11 +14,10 @@ connectDB();
 
 // CORS setup
 const allowedOrigins = [
-  process.env.BACKEND_URL,
   "http://localhost:5173",
   "http://localhost:3000",
+  process.env.CLIENT_URL,
 ];
-
 
 app.use(
   cors({
