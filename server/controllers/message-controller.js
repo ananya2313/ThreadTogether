@@ -1,5 +1,3 @@
-
-
 const mongoose = require("mongoose");
 const Message = require("../models/Message");
 const User = require("../models/user-model");
@@ -14,7 +12,9 @@ const sendMessage = async (req, res) => {
 
     const toxic = await checkToxicity(message);
     if (toxic) {
-      return res.status(400).json({ error: "Message contains offensive language!" });
+      return res
+        .status(400)
+        .json({ error: "Message contains offensive language!" });
     }
 
     // Convert to ObjectId
@@ -45,7 +45,9 @@ const getMessages = async (req, res) => {
     const { room } = req.params;
     const { before, limit } = req.query;
 
-    const [user1, user2] = room.split("_").map((id) => mongoose.Types.ObjectId(id));
+    const [user1, user2] = room
+      .split("_")
+      .map((id) => mongoose.Types.ObjectId(id));
 
     const query = {
       $or: [
@@ -92,72 +94,18 @@ const markMessagesAsSeen = async (req, res) => {
 };
 
 // Get chat users for current user
-// const getUserChats = async (req, res) => {
-//   try {
-//     const currentUserId = mongoose.Types.ObjectId(req.params.id);
-
-//     const messages = await Message.find({
-//       $or: [{ senderId: currentUserId }, { receiverId: currentUserId }],
-//     })
-//       .sort({ timestamp: -1 })
-//       .lean();
-
-//     const userMap = new Map();
-
-//     for (let msg of messages) {
-//       const otherUserId =
-//         msg.senderId.toString() === currentUserId.toString()
-//           ? msg.receiverId.toString()
-//           : msg.senderId.toString();
-
-//       if (!userMap.has(otherUserId)) {
-//         userMap.set(otherUserId, msg);
-//       }
-//     }
-
-//     const otherUserIds = Array.from(userMap.keys()).map((id) =>
-//       mongoose.Types.ObjectId(id)
-//     );
-
-//     const users = await User.find({ _id: { $in: otherUserIds } }).select(
-//       "_id userName profilePic"
-//     );
-
-//     const finalUsers = users.map((user) => ({
-//       _id: user._id,
-//       userName: user.userName,
-//       profilePic: user.profilePic,
-//       lastMessage: userMap.get(user._id.toString()).message,
-//     }));
-
-//     res.status(200).json({ users: finalUsers });
-//   } catch (error) {
-//     console.error("❌ Error in getUserChats:", error);
-//     res.status(500).json({ error: "Failed to get chat users" });
-//   }
-// };
-
-
-
 const getUserChats = async (req, res) => {
   try {
-    const userIdParam = req.params.id;
+    const currentUserId = mongoose.Types.ObjectId(req.params.id);
 
-    // 1️⃣ Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(userIdParam)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-    const currentUserId = mongoose.Types.ObjectId(userIdParam);
-
-    // 2️⃣ Fetch messages where the current user is sender or receiver
     const messages = await Message.find({
       $or: [{ senderId: currentUserId }, { receiverId: currentUserId }],
     })
       .sort({ timestamp: -1 })
       .lean();
 
-    // 3️⃣ Build map of latest message per user
     const userMap = new Map();
+
     for (let msg of messages) {
       const otherUserId =
         msg.senderId.toString() === currentUserId.toString()
@@ -169,18 +117,19 @@ const getUserChats = async (req, res) => {
       }
     }
 
-    // 4️⃣ Get other users' data
-    const otherUserIds = Array.from(userMap.keys()).filter(mongoose.Types.ObjectId.isValid);
+    const otherUserIds = Array.from(userMap.keys()).map((id) =>
+      mongoose.Types.ObjectId(id)
+    );
+
     const users = await User.find({ _id: { $in: otherUserIds } }).select(
       "_id userName profilePic"
     );
 
-    // 5️⃣ Prepare final users array
     const finalUsers = users.map((user) => ({
       _id: user._id,
       userName: user.userName,
       profilePic: user.profilePic,
-      lastMessage: userMap.get(user._id.toString())?.message || "",
+      lastMessage: userMap.get(user._id.toString()).message,
     }));
 
     res.status(200).json({ users: finalUsers });
@@ -189,7 +138,6 @@ const getUserChats = async (req, res) => {
     res.status(500).json({ error: "Failed to get chat users" });
   }
 };
-
 
 module.exports = {
   sendMessage,
