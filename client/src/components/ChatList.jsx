@@ -118,9 +118,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PropTypes from "prop-types";
 
-const BACKEND_URL = import.meta.env.PROD
-  ? "https://thread-1yni.onrender.com"
-  : "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 
 const ChatList = ({ currentUserId }) => {
   const [chatUsers, setChatUsers] = useState([]);
