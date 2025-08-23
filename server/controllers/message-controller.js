@@ -114,7 +114,7 @@ const getUserChats = async (req, res) => {
     }
 
     const otherUserIds = Array.from(userMap.keys()).map((id) =>
-      mongoose.Types.ObjectId(id)
+      new mongoose.Types.ObjectId(id)
     );
 
     const users = await User.find({ _id: { $in: otherUserIds } }).select(
