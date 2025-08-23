@@ -17,9 +17,8 @@ const sendMessage = async (req, res) => {
         .json({ error: "Message contains offensive language!" });
     }
 
-    // Convert to ObjectId
-    senderId = mongoose.Types.ObjectId(senderId);
-    receiverId = mongoose.Types.ObjectId(receiverId);
+    senderId = new mongoose.Types.ObjectId(senderId);
+    receiverId = new mongoose.Types.ObjectId(receiverId);
 
     const [id1, id2] = [senderId.toString(), receiverId.toString()].sort();
 
@@ -45,9 +44,7 @@ const getMessages = async (req, res) => {
     const { room } = req.params;
     const { before, limit } = req.query;
 
-    const [user1, user2] = room
-      .split("_")
-      .map((id) => mongoose.Types.ObjectId(id));
+     const [user1, user2] = room.split("_").map(id => new mongoose.Types.ObjectId(id));
 
     const query = {
       $or: [
@@ -96,8 +93,7 @@ const markMessagesAsSeen = async (req, res) => {
 // Get chat users for current user
 const getUserChats = async (req, res) => {
   try {
-    const currentUserId = mongoose.Types.ObjectId(req.params.id);
-
+    const currentUserId = new mongoose.Types.ObjectId(req.params.id);
     const messages = await Message.find({
       $or: [{ senderId: currentUserId }, { receiverId: currentUserId }],
     })
