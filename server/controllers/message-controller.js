@@ -16,13 +16,23 @@ const sendMessage = async (req, res) => {
         .json({ error: "Message contains offensive language!" });
     }
 
-    const newMessage = new Message({
-      senderId,
-      receiverId,
-      message,
-      timestamp: new Date(),
-      room: `${senderId}_${receiverId}`,
-    });
+    // const newMessage = new Message({
+    //   senderId,
+    //   receiverId,
+    //   message,
+    //   timestamp: new Date(),
+    //   room: `${senderId}_${receiverId}`,
+    // });
+
+    const [id1, id2] = [senderId, receiverId].sort();
+const newMessage = new Message({
+  senderId,
+  receiverId,
+  message,
+  timestamp: new Date(),
+  room: `${id1}_${id2}`,
+});
+
 
     const savedMessage = await newMessage.save();
     res.status(201).json(savedMessage);
