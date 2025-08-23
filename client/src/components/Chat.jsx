@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axios from "axios";
@@ -11,7 +10,6 @@ import { isToxicMessage } from "./../utils/isToxicMessage";
 const BACKEND_URL = import.meta.env.PROD
   ? import.meta.env.VITE_BACKEND_URL
   : "http://localhost:5000";
-
 
 const socket = io(BACKEND_URL);
 
@@ -39,6 +37,7 @@ const Chat = ({
   const endRef = useRef();
   const typingTimeoutRef = useRef();
 
+  // Set room
   useEffect(() => {
     if (currentUserId && chatWithUserId) {
       const sorted = [currentUserId, chatWithUserId].sort();
@@ -46,6 +45,7 @@ const Chat = ({
     }
   }, [currentUserId, chatWithUserId]);
 
+  // Socket events
   useEffect(() => {
     if (!room) return;
 
@@ -90,21 +90,25 @@ const Chat = ({
     };
   }, [room, currentUserId, currentUserName, chatWithUserId]);
 
+  // Fetch initial messages
   useEffect(() => {
+    if (!room) return;
     const fetchInitial = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/message/${room}?limit=20`, {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          `${BACKEND_URL}/api/message/${room}?limit=20`,
+          { withCredentials: true }
+        );
         setMessages(res.data);
         if (res.data.length < 20) setHasMore(false);
       } catch (err) {
         console.error("Failed to load messages", err);
       }
     };
-    if (room) fetchInitial();
+    fetchInitial();
   }, [room]);
 
+  // Handle scrolling to fetch older messages
   const handleScroll = async () => {
     const el = containerRef.current;
     if (!el || el.scrollTop > 50 || !hasMore || loadingMore) return;
@@ -113,9 +117,10 @@ const Chat = ({
     if (!oldest) return setLoadingMore(false);
 
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/message/${room}?before=${oldest}&limit=20`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${BACKEND_URL}/api/message/${room}?before=${oldest}&limit=20`,
+        { withCredentials: true }
+      );
       setMessages((prev) => [...res.data, ...prev]);
       if (res.data.length < 20) setHasMore(false);
     } catch (err) {
@@ -128,6 +133,7 @@ const Chat = ({
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Mark messages as seen
   useEffect(() => {
     if (!room || messages.length === 0) return;
 
@@ -159,33 +165,38 @@ const Chat = ({
     markSeen();
   }, [messages, room, chatWithUserId, currentUserId]);
 
+
+
   const handleSend = async () => {
-    if (!message.trim() || isToxic) return;
+  if (!message.trim() || isToxic) return;
 
-    const newMsg = {
-      senderId: currentUserId,
-      senderName: currentUserName,
-      receiverId: chatWithUserId,
-      message,
-      room,
-      timestamp: new Date().toISOString(),
-    };
-
-    socket.emit("send_message", newMsg);
-    socket.emit("stop_typing", { room });
-
-    try {
-      await axios.post(`${BACKEND_URL}/api/message`, newMsg, {
-        withCredentials: true,
-      });
-    } catch (err) {
-      console.error("Failed to save message", err);
-    }
-
-    setMessage("");
-    setIsToxic(false);
+  const newMsg = {
+    senderId: currentUserId,
+    receiverId: chatWithUserId,
+    message: message, // DB field
+    text: message,    // For moderation
+    room,
+    timestamp: new Date().toISOString(),
   };
 
+  // Emit socket
+  socket.emit("send_message", { ...newMsg, senderName: currentUserName });
+  socket.emit("stop_typing", { room });
+
+  try {
+    await axios.post(`${BACKEND_URL}/api/message`, newMsg, {
+      withCredentials: true,
+    });
+  } catch (err) {
+    console.error("Failed to save message", err);
+  }
+
+  setMessage("");
+  setIsToxic(false);
+};
+
+
+  // Typing handler
   const handleTyping = async (e) => {
     const inputText = e.target.value;
     setMessage(inputText);
@@ -204,9 +215,11 @@ const Chat = ({
     }, 1500);
   };
 
+  // Emoji handler
   const handleEmojiClick = (emojiData) => {
     const pos = inputRef.current.selectionStart;
-    const newText = message.slice(0, pos) + emojiData.emoji + message.slice(pos);
+    const newText =
+      message.slice(0, pos) + emojiData.emoji + message.slice(pos);
     setMessage(newText);
     setTimeout(() => {
       inputRef.current.focus();
@@ -219,7 +232,15 @@ const Chat = ({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", padding: 12, borderBottom: "1px solid #ccc" }}>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: 12,
+          borderBottom: "1px solid #ccc",
+        }}
+      >
         <img
           src={
             chatWithUserPic?.startsWith("http")
@@ -227,12 +248,19 @@ const Chat = ({
               : `${BACKEND_URL}/${chatWithUserPic}`
           }
           alt="Profile"
-          style={{ width: 45, height: 45, borderRadius: "50%", cursor: "pointer" }}
+          style={{
+            width: 45,
+            height: 45,
+            borderRadius: "50%",
+            cursor: "pointer",
+          }}
           onClick={() => navigate(`/profile/${chatWithUserId}`)}
           onError={(e) => (e.target.src = "https://ui-avatars.com/api/?name=User")}
         />
         <div style={{ marginLeft: 12 }}>
-          <div style={{ fontSize: 18, fontWeight: "bold" }}>{chatWithUserName}</div>
+          <div style={{ fontSize: 18, fontWeight: "bold" }}>
+            {chatWithUserName}
+          </div>
           <div style={{ fontSize: 12, color: isOnline ? "green" : "#555" }}>
             {isOnline
               ? "Online"
@@ -246,6 +274,7 @@ const Chat = ({
         </div>
       </div>
 
+      {/* Messages */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
@@ -255,7 +284,14 @@ const Chat = ({
         {messages.map((msg, idx) => {
           const sent = msg.senderId === currentUserId;
           return (
-            <div key={idx} style={{ display: "flex", justifyContent: sent ? "flex-end" : "flex-start", marginBottom: 8 }}>
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                justifyContent: sent ? "flex-end" : "flex-start",
+                marginBottom: 8,
+              }}
+            >
               <div
                 style={{
                   background: sent ? "#dcf8c6" : "#fff",
@@ -264,9 +300,13 @@ const Chat = ({
                   maxWidth: "70%",
                 }}
               >
-                <div style={{ fontWeight: "bold", marginBottom: 4 }}>{msg.senderName}</div>
+                <div style={{ fontWeight: "bold", marginBottom: 4 }}>
+                  {msg.senderName}
+                </div>
                 <div>{msg.message}</div>
-                <div style={{ fontSize: 10, color: "#888", textAlign: "right" }}>
+                <div
+                  style={{ fontSize: 10, color: "#888", textAlign: "right" }}
+                >
                   {new Date(msg.timestamp).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -289,7 +329,16 @@ const Chat = ({
         <div ref={endRef} />
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", padding: 12, borderTop: "1px solid #ccc", position: "relative" }}>
+      {/* Input */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: 12,
+          borderTop: "1px solid #ccc",
+          position: "relative",
+        }}
+      >
         <button onClick={() => setShowEmojiPicker((v) => !v)}>
           <FaSmile size={24} />
         </button>
@@ -306,11 +355,17 @@ const Chat = ({
             borderColor: isToxic ? "red" : undefined,
           }}
         />
-        <button onClick={handleSend} style={{ marginLeft: 8 }} disabled={isToxic || !message.trim()}>
+        <button
+          onClick={handleSend}
+          style={{ marginLeft: 8 }}
+          disabled={isToxic || !message.trim()}
+        >
           Send
         </button>
         {showEmojiPicker && (
-          <div style={{ position: "absolute", bottom: "60px", left: "12px", zIndex: 10 }}>
+          <div
+            style={{ position: "absolute", bottom: "60px", left: "12px", zIndex: 10 }}
+          >
             <EmojiPicker onEmojiClick={handleEmojiClick} />
           </div>
         )}
@@ -318,7 +373,7 @@ const Chat = ({
 
       {isToxic && (
         <div style={{ color: "red", fontSize: 12, margin: "0 12px 8px" }}>
-          ⚠️ This message is offensive. You can not send it.
+          ⚠️ This message is offensive. You cannot send it.
         </div>
       )}
     </div>

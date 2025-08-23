@@ -1,16 +1,19 @@
 
-
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PropTypes from "prop-types";
+import io from "socket.io-client";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+// const BACKEND_URL = "http://localhost:5000";
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const ChatList = ({ currentUserId }) => {
   const [chatUsers, setChatUsers] = useState([]);
-  const listRef = useRef(null);
   const navigate = useNavigate();
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -28,27 +31,40 @@ const ChatList = ({ currentUserId }) => {
     };
 
     fetchChats();
+
+    // Initialize socket once
+    if (!socketRef.current) {
+      socketRef.current = io(BACKEND_URL);
+    }
+    const socket = socketRef.current;
+    socket.emit("user_connected", currentUserId);
+
+    const handleNewMessage = (msg) => {
+      if (msg.senderId === currentUserId || msg.receiverId === currentUserId) {
+        fetchChats();
+      }
+    };
+
+    socket.on("receive_message", handleNewMessage);
+
+    return () => {
+      socket.off("receive_message", handleNewMessage);
+    };
   }, [currentUserId]);
 
-  const openChat = (userId) => {
-    navigate(`/chat/${userId}`);
-  };
-
-  const openProfile = (userId) => {
-    navigate(`/profile/${userId}`);
-  };
+  const openChat = (userId) => navigate(`/chat/${userId}`);
+  const openProfile = (userId) => navigate(`/profile/${userId}`);
 
   return (
     <div
-      ref={listRef}
       style={{
         width: "100%",
-        maxWidth: "350px", // Same as sidebar in Home.jsx
+        maxWidth: "350px",
         borderRight: "1px solid #e0e0e0",
         height: "100vh",
         overflowY: "auto",
         padding: "1rem",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fff",
         scrollbarWidth: "thin",
       }}
     >
@@ -73,12 +89,8 @@ const ChatList = ({ currentUserId }) => {
               backgroundColor: "#f5f5f5",
               transition: "background 0.2s",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#eaeaea")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#f5f5f5")
-            }
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#eaeaea")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f5f5f5")}
           >
             <img
               src={
@@ -104,10 +116,11 @@ const ChatList = ({ currentUserId }) => {
                 {chat.userName}
               </div>
               <div style={{ fontSize: "0.85rem", color: "#666" }}>
-                {/* {chat.lastMessage?.slice(0, 30) || "Start conversation"} */}
-                {chat.lastMessage?.slice(0, 30) +
-                  (chat.lastMessage?.length > 30 ? "..." : "") ||
-                  "Start conversation"}
+                {chat.lastMessage
+                  ? chat.lastMessage.length > 30
+                    ? chat.lastMessage.slice(0, 30) + "..."
+                    : chat.lastMessage
+                  : "Start conversation"}
               </div>
             </div>
           </div>
@@ -122,3 +135,4 @@ ChatList.propTypes = {
 };
 
 export default ChatList;
+
