@@ -14,9 +14,13 @@ const FakeNews = () => {
         setResult("⚠️ You must be logged in.");
         return;
       }
+      const SERVER_URL = import.meta.env.VITE_BACKEND_URL; 
+
+
+
 
       const res = await axios.post(
-        "http://localhost:5000/api/detect-fake-news",
+         `${SERVER_URL}/api/detect-fake-news`,
         { news },
         {
           headers: {

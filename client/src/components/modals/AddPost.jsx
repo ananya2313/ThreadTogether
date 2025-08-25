@@ -82,7 +82,8 @@ const AddPost = () => {
       return toast.info("Please write something first.");
     }
 
-    const SERVER_URL = process.env.VITE_BACKEND_URL;
+    const SERVER_URL = import.meta.env.VITE_BACKEND_URL;
+
 
     try {
       setLoadingCaption(true);
