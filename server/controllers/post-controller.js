@@ -14,11 +14,12 @@ exports.addPost = async (req, res) => {
       if (err) {
         return res.status(400).json({ msg: "Error in form parse !" });
       }
-
+      
+      const SERVER_URL = process.env.SERVER_URL;
       // 🧠 Call to moderation API
       if (fields.text) {
         try {
-          const response = await fetch("http://localhost:5000/api/moderation", {
+          const response = await fetch(`${SERVER_URL}/api/moderation`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: fields.text }),
