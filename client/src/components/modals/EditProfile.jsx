@@ -62,34 +62,6 @@ import {
       }
       dispatch(editProfileModal(false));
     };
-  
-    // useEffect(() => {
-    //   if (updateProfileData.isSuccess) {
-    //     refetch();
-    //     toast.success(updateProfileData.data.msg, {
-    //       position: "top-center",
-    //       autoClose: 2500,
-    //       hideProgressBar: false,
-    //       closeOnClick: true,
-    //       pauseOnHover: true,
-    //       draggable: true,
-    //       theme: "colored",
-    //       transition: Bounce,
-    //     });
-    //   }
-    //   if (updateProfileData.isError) {
-    //     toast.error(updateProfileData.error.data.msg, {
-    //       position: "top-center",
-    //       autoClose: 2500,
-    //       hideProgressBar: false,
-    //       closeOnClick: true,
-    //       pauseOnHover: true,
-    //       draggable: true,
-    //       theme: "colored",
-    //       transition: Bounce,
-    //     });
-    //   }
-    // }, [updateProfileData.isError, updateProfileData.isSuccess]);
 
     useEffect(() => {
   if (updateProfileData?.isSuccess) {
