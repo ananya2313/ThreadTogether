@@ -1,11 +1,11 @@
-const SERVER_URL = process.env.VITE_BACKEND_URL;
-require('dotenv').config();
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL;
+
 export const isToxicMessage = async (text) => {
   try {
     const res = await fetch(`${SERVER_URL}/api/moderation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }), // ✅ correct key
+      body: JSON.stringify({ text }),
     });
 
     const data = await res.json();
