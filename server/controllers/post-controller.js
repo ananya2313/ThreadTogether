@@ -6,6 +6,7 @@ const Comment = require("../models/comment-model");
 const cloudinary = require("../config/cloudinary");
 const formidable = require("formidable");
 const mongoose = require("mongoose");
+require('dotenv').config();
 
 exports.addPost = async (req, res) => {
   try {
