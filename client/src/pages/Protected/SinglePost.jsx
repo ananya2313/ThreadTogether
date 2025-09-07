@@ -14,15 +14,7 @@ const SinglePost = () => {
   const { data, refetch } = useSinglePostQuery(params?.id);
   const [addComment, addCommentData] = useAddCommentMutation();
 
-  // const handleAddComment = async (e) => {
-  //   if (data && e.key === "Enter") {
-  //     const info = {
-  //       id: data.post._id,
-  //       text: comment,
-  //     };
-  //     await addComment(info);
-  //   }
-  // };
+
   const handleAddComment = async (e) => {
   if (data?.post && e.key === "Enter" && comment.trim()) {
     e.preventDefault();

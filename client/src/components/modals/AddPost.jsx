@@ -88,7 +88,7 @@ const AddPost = () => {
     try {
       setLoadingCaption(true);
 
-      const res = await fetch(`${SERVER_URL}/api/moderation`, {
+      const res = await fetch(`${SERVER_URL}/api/ai-caption`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

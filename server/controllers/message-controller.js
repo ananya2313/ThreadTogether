@@ -3,40 +3,57 @@ const Message = require("../models/Message");
 const User = require("../models/user-model");
 const { checkToxicity } = require("./moderation-controller");
 
-// Send a message
 const sendMessage = async (req, res) => {
   try {
-    let { senderId, receiverId, message } = req.body;
+    const { senderId, receiverId, text } = req.body;
 
-    if (!message) return res.status(400).json({ error: "Message is empty" });
-
-    const toxic = await checkToxicity(message);
-    if (toxic) {
-      return res
-        .status(400)
-        .json({ error: "Message contains offensive language!" });
+    if (!text) {
+      return res.status(400).json({ error: "Message is empty" });
     }
 
-    senderId = new mongoose.Types.ObjectId(senderId);
-    receiverId = new mongoose.Types.ObjectId(receiverId);
+    let isToxic = false;
 
-    const [id1, id2] = [senderId.toString(), receiverId.toString()].sort();
+    // Attempt to run the toxicity check safely
+    try {
+      const response = await checkToxicity({ body: { text } });
+      // checkToxicity should now return { isToxic: boolean } when called programmatically
+      isToxic = response.isToxic;
+
+      if (isToxic) {
+        return res
+          .status(400)
+          .json({ error: "Message contains offensive language!" });
+      }
+    } catch (error) {
+      console.warn("❌ Moderation failed. Skipping check:", error.message);
+      // Proceed without blocking message
+    }
+
+    // Save the message
+    const senderObjId = new mongoose.Types.ObjectId(senderId);
+    const receiverObjId = new mongoose.Types.ObjectId(receiverId);
+
+    const [id1, id2] = [senderObjId.toString(), receiverObjId.toString()].sort();
 
     const newMessage = new Message({
-      senderId,
-      receiverId,
-      message,
+      senderId: senderObjId,
+      receiverId: receiverObjId,
+      message: text,
       timestamp: new Date(),
       room: `${id1}_${id2}`,
     });
 
     const savedMessage = await newMessage.save();
     res.status(201).json(savedMessage);
+
   } catch (error) {
     console.error("❌ Error in sendMessage:", error);
     res.status(500).json({ error: "Failed to send message" });
   }
 };
+
+
+
 
 // Get messages for a room (with pagination)
 const getMessages = async (req, res) => {
